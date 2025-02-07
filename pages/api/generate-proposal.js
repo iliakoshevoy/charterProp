@@ -1,11 +1,11 @@
-import { Document, Paragraph, TextRun, Packer } from 'docx';
+import formidable from 'formidable';
+import PizZip from 'pizzip';
+import Docxtemplater from 'docxtemplater';
+import fs from 'fs';
 
 export const config = {
   api: {
-    bodyParser: {
-      sizeLimit: '4mb',
-    },
-    responseLimit: '4mb',
+    bodyParser: false,
   },
 };
 
@@ -15,126 +15,58 @@ export default async function handler(req, res) {
   }
 
   try {
-    console.log('Received request body:', req.body); // Debug log
-
-    const {
-      customerName,
-      departureAirport,
-      destinationAirport,
-      departureDate,
-      airplaneOption1,
-      airplaneOption2
-    } = req.body;
-
-    // Validate input
-    if (!customerName || !departureAirport || !destinationAirport || !departureDate || !airplaneOption1 || !airplaneOption2) {
-      return res.status(400).json({ message: 'Missing required fields' });
-    }
-
-    console.log('Creating document...'); // Debug log
-
-    // Create document
-    const doc = new Document({
-      sections: [{
-        properties: {},
-        children: [
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: 'PRIVATE JET CHARTER PROPOSAL',
-                bold: true,
-                size: 32
-              })
-            ],
-            spacing: {
-              after: 200
-            }
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: `Customer: ${customerName}`,
-                size: 24
-              })
-            ]
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: `From: ${departureAirport}`,
-                size: 24
-              })
-            ]
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: `To: ${destinationAirport}`,
-                size: 24
-              })
-            ]
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: `Date: ${departureDate}`,
-                size: 24
-              })
-            ]
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: 'Aircraft Options:',
-                bold: true,
-                size: 28
-              })
-            ],
-            spacing: {
-              before: 200
-            }
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: `Option 1: ${airplaneOption1}`,
-                size: 24
-              })
-            ]
-          }),
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: `Option 2: ${airplaneOption2}`,
-                size: 24
-              })
-            ]
-          })
-        ]
-      }]
+    // Parse form data including file
+    const form = new formidable.IncomingForm();
+    const { fields, files } = await new Promise((resolve, reject) => {
+      form.parse(req, (err, fields, files) => {
+        if (err) reject(err);
+        resolve({ fields, files });
+      });
     });
 
-    console.log('Document created, generating buffer...'); // Debug log
+    // Validate input
+    if (!files.template) {
+      return res.status(400).json({ message: 'No template file provided' });
+    }
 
-    // Generate buffer using Packer
-    const buffer = await Packer.toBuffer(doc);
+    // Read template file
+    const templateContent = await fs.promises.readFile(files.template.filepath);
+    
+    // Create template processor
+    const zip = new PizZip(templateContent);
+    const doc = new Docxtemplater(zip, {
+      paragraphLoop: true,
+      linebreaks: true,
+    });
 
-    console.log('Buffer generated, sending response...'); // Debug log
+    // Replace placeholders with form data
+    doc.render({
+      CUSTOMER: fields.customerName,
+      DEPARTURE: fields.departureAirport,
+      DESTINATION: fields.destinationAirport,
+      DATE: fields.departureDate,
+      OPTION1: fields.airplaneOption1,
+      OPTION2: fields.airplaneOption2,
+    });
+
+    // Generate document
+    const buffer = doc.getZip().generate({
+      type: 'nodebuffer',
+      compression: 'DEFLATE',
+    });
 
     // Set response headers
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-    res.setHeader('Content-Disposition', `attachment; filename=${customerName}-charter-proposal.docx`);
-    res.setHeader('Content-Length', buffer.length);
+    res.setHeader('Content-Disposition', `attachment; filename=${fields.customerName}-charter-proposal.docx`);
 
     // Send response
-    res.status(200).send(buffer);
+    res.send(buffer);
 
   } catch (error) {
-    console.error('Detailed error:', error); // Debug log
+    console.error('Error processing document:', error);
     res.status(500).json({ 
       message: 'Error generating document',
-      error: error.message,
-      stack: error.stack 
+      error: error.message 
     });
   }
 }

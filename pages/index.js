@@ -10,6 +10,7 @@ const Home = () => {
     airplaneOption2: ''
   });
   
+  const [template, setTemplate] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -21,18 +22,38 @@ const Home = () => {
     }));
   };
 
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file && file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+      setTemplate(file);
+      setError('');
+    } else {
+      setError('Please upload a valid Word document (.docx)');
+      e.target.value = '';
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!template) {
+      setError('Please upload a template document first');
+      return;
+    }
+
     setIsLoading(true);
     setError('');
     
     try {
+      const formDataToSend = new FormData();
+      formDataToSend.append('template', template);
+      // Add all form fields to FormData
+      Object.entries(formData).forEach(([key, value]) => {
+        formDataToSend.append(key, value);
+      });
+
       const response = await fetch('/api/generate-proposal', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
+        body: formDataToSend, // Send as FormData instead of JSON
       });
       
       if (!response.ok) {
@@ -72,6 +93,23 @@ const Home = () => {
           
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-4">
+              {/* File Upload Section */}
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Upload Template Document (.docx)
+                </label>
+                <input
+                  type="file"
+                  accept=".docx"
+                  onChange={handleFileChange}
+                  className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                  disabled={isLoading}
+                />
+                <p className="mt-2 text-xs text-gray-500">
+                  Use placeholders like {'{'}{'{'}}CUSTOMER{'}'}{'},'} {'{'}{'{'}}DEPARTURE{'}'}{'},'} {'{'}{'{'}}DESTINATION{'}'}{'},'} {'{'}{'{'}}DATE{'}'}{'},'} {'{'}{'{'}}OPTION1{'}'}{'},'} {'{'}{'{'}}OPTION2{'}'}{'}'} in your template
+                </p>
+              </div>
+
               <div>
                 <label htmlFor="customerName" className="block text-sm font-medium text-gray-700 mb-1">
                   Customer Name
@@ -175,9 +213,9 @@ const Home = () => {
             
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || !template}
               className={`w-full py-3 px-4 bg-blue-600 text-white font-medium rounded-md 
-                ${isLoading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-700'} 
+                ${(isLoading || !template) ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-700'} 
                 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}
             >
               {isLoading ? 'Generating...' : 'Generate Proposal'}
