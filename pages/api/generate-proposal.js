@@ -1,4 +1,13 @@
-import { Document, Paragraph, TextRun } from 'docx';
+import { Document, Paragraph, TextRun, Packer } from 'docx';
+
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '4mb',
+    },
+    responseLimit: '4mb',
+  },
+};
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -6,6 +15,8 @@ export default async function handler(req, res) {
   }
 
   try {
+    console.log('Received request body:', req.body); // Debug log
+
     const {
       customerName,
       departureAirport,
@@ -14,6 +25,13 @@ export default async function handler(req, res) {
       airplaneOption1,
       airplaneOption2
     } = req.body;
+
+    // Validate input
+    if (!customerName || !departureAirport || !destinationAirport || !departureDate || !airplaneOption1 || !airplaneOption2) {
+      return res.status(400).json({ message: 'Missing required fields' });
+    }
+
+    console.log('Creating document...'); // Debug log
 
     // Create document
     const doc = new Document({
@@ -96,13 +114,27 @@ export default async function handler(req, res) {
       }]
     });
 
-    const buffer = await doc.save();
-    
-    res.setHeader('Content-Disposition', 'attachment; filename=proposal.docx');
+    console.log('Document created, generating buffer...'); // Debug log
+
+    // Generate buffer using Packer
+    const buffer = await Packer.toBuffer(doc);
+
+    console.log('Buffer generated, sending response...'); // Debug log
+
+    // Set response headers
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-    res.send(buffer);
+    res.setHeader('Content-Disposition', `attachment; filename=${customerName}-charter-proposal.docx`);
+    res.setHeader('Content-Length', buffer.length);
+
+    // Send response
+    res.status(200).send(buffer);
+
   } catch (error) {
-    console.error('Error generating document:', error);
-    res.status(500).json({ message: 'Error generating document' });
+    console.error('Detailed error:', error); // Debug log
+    res.status(500).json({ 
+      message: 'Error generating document',
+      error: error.message,
+      stack: error.stack 
+    });
   }
 }
