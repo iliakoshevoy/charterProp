@@ -106,7 +106,7 @@ const Home = () => {
                   disabled={isLoading}
                 />
                 <p className="mt-2 text-xs text-gray-500">
-                  Use placeholders like {'{'}{'{'}}CUSTOMER{'}'}{'},'} {'{'}{'{'}}DEPARTURE{'}'}{'},'} {'{'}{'{'}}DESTINATION{'}'}{'},'} {'{'}{'{'}}DATE{'}'}{'},'} {'{'}{'{'}}OPTION1{'}'}{'},'} {'{'}{'{'}}OPTION2{'}'}{'}'} in your template
+                  Use placeholders like &#123;&#123;CUSTOMER&#125;&#125;, &#123;&#123;DEPARTURE&#125;&#125;, &#123;&#123;DESTINATION&#125;&#125;, &#123;&#123;DATE&#125;&#125;, &#123;&#123;OPTION1&#125;&#125;, &#123;&#123;OPTION2&#125;&#125; in your template
                 </p>
               </div>
 
