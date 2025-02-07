@@ -51,13 +51,20 @@ const Home = () => {
         formDataToSend.append(key, value);
       });
 
+      console.log('Sending form data:', {
+        template: template.name,
+        ...formData
+      });
+
       const response = await fetch('/api/generate-proposal', {
         method: 'POST',
-        body: formDataToSend, // Send as FormData instead of JSON
+        body: formDataToSend,
       });
       
       if (!response.ok) {
-        throw new Error('Failed to generate proposal');
+        const errorData = await response.json();
+        console.error('Server error:', errorData);
+        throw new Error(errorData.message || 'Failed to generate proposal');
       }
       
       const blob = await response.blob();
@@ -106,7 +113,7 @@ const Home = () => {
                   disabled={isLoading}
                 />
                 <p className="mt-2 text-xs text-gray-500">
-                  Use placeholders like &#123;&#123;CUSTOMER&#125;&#125;, &#123;&#123;DEPARTURE&#125;&#125;, &#123;&#123;DESTINATION&#125;&#125;, &#123;&#123;DATE&#125;&#125;, &#123;&#123;OPTION1&#125;&#125;, &#123;&#123;OPTION2&#125;&#125; in your template
+                  Use placeholders like {CUSTOMER}, {DEPARTURE}, {DESTINATION}, {DATE}, {OPTION1}, {OPTION2} in your template
                 </p>
               </div>
 
