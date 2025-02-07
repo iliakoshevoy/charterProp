@@ -1,0 +1,2 @@
+# charterProp
+Charter proposal generator
