@@ -1,8 +1,14 @@
 {
-  "functions": {
-    "pages/api/*.js": {
-      "memory": 1024,
-      "maxDuration": 30
+  "version": 2,
+  "builds": [
+    {
+      "src": "next.config.js",
+      "use": "@vercel/next"
     }
+  ],
+  "env": {
+    "NEXTAUTH_URL": "https://charter-prop.vercel.app",
+    "DATABASE_URL": "@database_url",
+    "NEXTAUTH_SECRET": "@nextauth_secret"
   }
 }
