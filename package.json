@@ -8,13 +8,17 @@
     "start": "next start"
   },
   "dependencies": {
-    "next": "latest",
-    "react": "latest",
-    "react-dom": "latest",
+    "@prisma/client": "^6.3.1",
+    "bcryptjs": "^2.4.3",
     "docx": "^8.2.2",
+    "docxtemplater": "^3.37.9",
     "formidable": "^2.1.1",
+    "next": "latest",
+    "next-auth": "^4.24.11",
     "pizzip": "^3.1.4",
-    "docxtemplater": "^3.37.9"
+    "prisma": "^6.3.1",
+    "react": "latest",
+    "react-dom": "latest"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.14",

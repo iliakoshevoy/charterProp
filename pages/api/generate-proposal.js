@@ -1,3 +1,5 @@
+import { getServerSession } from 'next-auth';
+import { authOptions } from './auth/[...nextauth]';
 import formidable from 'formidable';
 import PizZip from 'pizzip';
 import Docxtemplater from 'docxtemplater';
@@ -10,6 +12,13 @@ export const config = {
 };
 
 export default async function handler(req, res) {
+  // Check authentication
+  const session = await getServerSession(req, res, authOptions);
+  
+  if (!session) {
+    return res.status(401).json({ message: 'You must be logged in to use this API' });
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method not allowed' });
   }
