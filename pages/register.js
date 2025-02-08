@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
-
+//random comment
 export default function Register() {
   const router = useRouter();
   const [error, setError] = useState('');
